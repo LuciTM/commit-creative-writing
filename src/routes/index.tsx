@@ -303,8 +303,8 @@ function Act({
         ? "bg-[color:var(--ivory)]"
         : "bg-[color:var(--parchment)]";
   return (
-    <section id={id} className={`relative ${bg} px-6 py-32 md:py-44`}>
-      <div className="mx-auto max-w-[68ch]">
+    <section id={id} className={`relative ${bg} px-6 py-24 sm:py-32 md:py-40`}>
+      <div className="mx-auto max-w-[68ch] space-y-7 md:space-y-8">
         <ActMarker index={index} title={title} />
         {children}
       </div>
@@ -380,40 +380,51 @@ function ActI_Letter() {
 
 function ActII_Entrance() {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const leftX = useTransform(scrollYProgress, [0, 0.5], ["0%", "-55%"]);
-  const rightX = useTransform(scrollYProgress, [0, 0.5], ["0%", "55%"]);
-  const glow = useTransform(scrollYProgress, [0.1, 0.55], [0, 1]);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  // Smooth spring so the velvet drapes drift instead of snap.
+  const p = useSpring(scrollYProgress, { stiffness: 80, damping: 26, mass: 0.6 });
+  // Long, gentle opening across ~70% of the pinned scroll.
+  const leftX = useTransform(p, [0, 0.7], ["0%", "-102%"]);
+  const rightX = useTransform(p, [0, 0.7], ["0%", "102%"]);
+  const drapeScaleY = useTransform(p, [0, 0.7], [1, 1.04]);
+  const drapeSkew = useTransform(p, [0, 0.7], [0, -3]);
+  const drapeSkewR = useTransform(p, [0, 0.7], [0, 3]);
+  const glow = useTransform(p, [0.15, 0.6], [0, 1]);
+  const spotlightY = useTransform(p, [0, 0.7], ["-20%", "0%"]);
+  const titleY = useTransform(p, [0.35, 0.85], [40, -40]);
+  const titleOpacity = useTransform(p, [0.3, 0.55, 0.85], [0, 1, 1]);
+  const floorOpacity = useTransform(p, [0.4, 0.75], [0, 0.55]);
 
   return (
     <section
       ref={ref}
-      className="relative isolate overflow-hidden bg-[color:var(--ink)] text-[color:var(--parchment)]"
+      className="relative isolate bg-[color:var(--ink)] text-[color:var(--parchment)]"
+      style={{ minHeight: "260svh" }}
     >
-      {/* Spotlight */}
-      <motion.div
-        aria-hidden
-        style={{ opacity: glow }}
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_color-mix(in_oklab,var(--gold)_22%,transparent)_0%,_transparent_55%)]"
-      />
-      <Particles count={24} />
+      {/* Pinned theatrical stage */}
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
+        {/* Distant stage glow */}
+        <motion.div
+          aria-hidden
+          style={{ opacity: glow, y: spotlightY }}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_45%,_color-mix(in_oklab,var(--gold)_28%,transparent)_0%,_color-mix(in_oklab,var(--gold)_8%,transparent)_45%,_transparent_70%)]"
+        />
+        {/* Stage floor reflection */}
+        <motion.div
+          aria-hidden
+          style={{ opacity: floorOpacity }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-[linear-gradient(to_top,_color-mix(in_oklab,var(--gold)_22%,transparent)_0%,_transparent_100%)]"
+        />
 
-      <div className="sticky top-0 flex h-[100svh] items-center justify-center px-6">
-        <div className="relative w-full max-w-6xl text-center">
-          {/* Curtains */}
-          <motion.div
-            aria-hidden
-            style={{ x: leftX }}
-            className="absolute inset-y-0 left-0 w-1/2 bg-[linear-gradient(90deg,_color-mix(in_oklab,var(--burgundy)_92%,black)_0%,_color-mix(in_oklab,var(--burgundy)_70%,black)_60%,_color-mix(in_oklab,var(--burgundy)_45%,black)_100%)]"
-          />
-          <motion.div
-            aria-hidden
-            style={{ x: rightX }}
-            className="absolute inset-y-0 right-0 w-1/2 bg-[linear-gradient(270deg,_color-mix(in_oklab,var(--burgundy)_92%,black)_0%,_color-mix(in_oklab,var(--burgundy)_70%,black)_60%,_color-mix(in_oklab,var(--burgundy)_45%,black)_100%)]"
-          />
+        <Particles count={28} />
 
-          <div className="relative z-10">
-            <p className="mb-6 font-[family-name:var(--font-letter)] italic tracking-[0.4em] text-sm text-[color:var(--gold)] uppercase">
+        {/* Title in the spotlight */}
+        <motion.div
+          style={{ y: titleY, opacity: titleOpacity }}
+          className="relative z-10 flex h-full items-center justify-center px-6 text-center"
+        >
+          <div className="max-w-5xl">
+            <p className="mb-6 font-[family-name:var(--font-letter)] italic tracking-[0.45em] text-[11px] text-[color:var(--gold)] uppercase">
               The Ringmaster Announces
             </p>
             <h2 className="font-[family-name:var(--font-display)] italic leading-[0.95] text-[clamp(2.5rem,9vw,7rem)]">
@@ -427,17 +438,104 @@ function ActII_Entrance() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 2, delay: 1.2 }}
+              transition={{ duration: 2.2, delay: 1.4 }}
               className="mx-auto mt-10 max-w-xl font-[family-name:var(--font-letter)] italic text-lg text-[color:var(--parchment)]/70"
             >
               “This is our circus.”
             </motion.p>
           </div>
+        </motion.div>
+
+        {/* Velvet curtains — left */}
+        <motion.div
+          aria-hidden
+          style={{ x: leftX, scaleY: drapeScaleY, skewY: drapeSkew, transformOrigin: "top left" }}
+          className="absolute inset-y-0 left-0 z-20 w-[52%] will-change-transform"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, color-mix(in oklab, var(--burgundy) 96%, black) 0%, color-mix(in oklab, var(--burgundy) 78%, black) 55%, color-mix(in oklab, var(--burgundy) 55%, black) 100%)",
+            }}
+          />
+          {/* velvet pleats */}
+          <div
+            className="absolute inset-0 opacity-70 mix-blend-overlay"
+            style={{
+              background:
+                "repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.05) 14px, rgba(255,220,170,0.08) 30px, rgba(0,0,0,0.35) 46px)",
+            }}
+          />
+          {/* inner shadow on the parting edge */}
+          <div
+            className="absolute inset-y-0 right-0 w-24"
+            style={{
+              background:
+                "linear-gradient(270deg, rgba(0,0,0,0.55) 0%, transparent 100%)",
+            }}
+          />
+          {/* golden trim */}
+          <div className="absolute inset-y-0 right-0 w-[2px] bg-[color:var(--gold)]/60" />
+        </motion.div>
+
+        {/* Velvet curtains — right */}
+        <motion.div
+          aria-hidden
+          style={{ x: rightX, scaleY: drapeScaleY, skewY: drapeSkewR, transformOrigin: "top right" }}
+          className="absolute inset-y-0 right-0 z-20 w-[52%] will-change-transform"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(270deg, color-mix(in oklab, var(--burgundy) 96%, black) 0%, color-mix(in oklab, var(--burgundy) 78%, black) 55%, color-mix(in oklab, var(--burgundy) 55%, black) 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-0 opacity-70 mix-blend-overlay"
+            style={{
+              background:
+                "repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.05) 14px, rgba(255,220,170,0.08) 30px, rgba(0,0,0,0.35) 46px)",
+            }}
+          />
+          <div
+            className="absolute inset-y-0 left-0 w-24"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(0,0,0,0.55) 0%, transparent 100%)",
+            }}
+          />
+          <div className="absolute inset-y-0 left-0 w-[2px] bg-[color:var(--gold)]/60" />
+        </motion.div>
+
+        {/* Pelmet / valance across the top */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 z-30 h-10 md:h-14"
+          style={{
+            background:
+              "linear-gradient(180deg, color-mix(in oklab, var(--burgundy) 95%, black) 0%, color-mix(in oklab, var(--burgundy) 55%, black) 100%)",
+            boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6)",
+          }}
+        >
+          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-[color:var(--gold)]/70" />
         </div>
+
+        {/* Scroll hint */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 1.5 }}
+          className="absolute bottom-6 left-1/2 z-40 -translate-x-1/2 font-[family-name:var(--font-letter)] italic text-[10px] uppercase tracking-[0.5em] text-[color:var(--gold)]/80"
+        >
+          scroll · the curtains part
+        </motion.div>
       </div>
 
       {/* Post-reveal narrative */}
-      <div className="relative mx-auto max-w-[64ch] px-6 pb-40 pt-10 md:pt-24">
+      <div className="relative mx-auto max-w-[64ch] px-6 pb-32 pt-20 md:pt-28">
         <FadeUp>
           <p className="font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[1.95] text-[color:var(--parchment)]/90">
             A grand arena of applause. Big seats surrounding a stage of rainbows with golden
@@ -446,7 +544,7 @@ function ActII_Entrance() {
           </p>
         </FadeUp>
 
-        <div className="mt-12 space-y-4 font-[family-name:var(--font-letter)] italic text-xl md:text-2xl text-[color:var(--parchment)]/85">
+        <div className="mt-14 space-y-5 font-[family-name:var(--font-letter)] italic text-xl md:text-2xl text-[color:var(--parchment)]/85">
           {[
             "The ones who speak and dress differently.",
             "Those individuals whose lives don’t fit into the limited spaces that the world has set up for them.",
@@ -454,8 +552,8 @@ function ActII_Entrance() {
             "The woman who loves another woman.",
             "The man whose heart belongs to another man.",
           ].map((line, i) => (
-            <FadeUp key={i} delay={i * 0.08} y={18}>
-              <p className="border-l border-[color:var(--gold)]/40 pl-6">{line}</p>
+            <FadeUp key={i} delay={i * 0.12} y={20}>
+              <p className="border-l border-[color:var(--gold)]/40 pl-6 py-1">{line}</p>
             </FadeUp>
           ))}
         </div>
