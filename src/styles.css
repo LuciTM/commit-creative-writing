@@ -70,6 +70,7 @@
   --font-display: var(--font-display);
   --font-serif: var(--font-serif);
   --font-letter: var(--font-letter);
+  --font-handwriting: var(--font-handwriting);
 }
 
 :root {
@@ -120,6 +121,7 @@
   --font-display: "Bodoni Moda", "Playfair Display", Georgia, serif;
   --font-serif: "EB Garamond", "Source Serif 4", Georgia, serif;
   --font-letter: "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  --font-handwriting: "Parisienne", "Dancing Script", cursive;
 }
 
 .dark {
@@ -168,7 +170,6 @@
     font-family: var(--font-serif);
     font-feature-settings: "liga", "dlig", "kern";
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
 
   ::selection {

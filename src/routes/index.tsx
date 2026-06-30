@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, useSpring, useReducedMotion, AnimatePresence } from "motion/react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useReducedMotion,
+  AnimatePresence,
+  type MotionValue,
+} from "motion/react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,7 +48,15 @@ function ScrollProgress() {
   );
 }
 
-function ActMarker({ index, title }: { index: string; title: string }) {
+function ActMarker({
+  index,
+  title,
+  color,
+}: {
+  index: string;
+  title: string;
+  color?: MotionValue<string>;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -48,11 +64,15 @@ function ActMarker({ index, title }: { index: string; title: string }) {
       viewport={{ once: true, margin: "-20% 0px" }}
       transition={{ duration: 1.2, ease }}
       className="mb-12 flex items-center gap-6 text-[color:var(--bronze)]"
+      style={color ? { color } : {}}
     >
       <span className="font-[family-name:var(--font-display)] italic text-sm tracking-[0.4em] uppercase">
         {index}
       </span>
-      <span className="h-px w-16 bg-[color:var(--bronze)]/40" />
+      <motion.span
+        className="h-px w-16 bg-[color:var(--bronze)]/40"
+        style={color ? { backgroundColor: color, opacity: 0.4 } : {}}
+      />
       <span className="font-[family-name:var(--font-letter)] italic text-base tracking-wider">
         {title}
       </span>
@@ -97,22 +117,21 @@ function RevealLine({
   stagger?: number;
   delay?: number;
 }) {
-  const words = text.split(" ");
+  const words = text.split(" ").filter(Boolean);
   return (
     <span className={className}>
       {words.map((w, i) => (
-        <span key={i} className="inline-block overflow-hidden align-baseline">
-          <motion.span
-            className="inline-block"
-            initial={{ y: "110%", opacity: 0 }}
-            whileInView={{ y: "0%", opacity: 1 }}
-            viewport={{ once: true, margin: "-15% 0px" }}
-            transition={{ duration: 0.9, ease, delay: delay + i * stagger }}
-          >
-            {w}
-            {i < words.length - 1 ? "\u00A0" : ""}
-          </motion.span>
-        </span>
+        <motion.span
+          key={i}
+          className="inline-block"
+          initial={{ y: "110%", opacity: 0 }}
+          whileInView={{ y: "0%", opacity: 1 }}
+          viewport={{ once: true, margin: "-10% 0px" }}
+          transition={{ duration: 0.9, ease, delay: delay + i * stagger }}
+        >
+          {w}
+          {i < words.length - 1 ? "\u00A0" : ""}
+        </motion.span>
       ))}
     </span>
   );
@@ -654,7 +673,7 @@ function ActIV_Reflection() {
         <ActMarker index="Act IV" title="The Reflection" />
 
         <FadeUp>
-          <h3 className="font-[family-name:var(--font-display)] italic text-[clamp(2.4rem,6vw,4.6rem)] leading-[1.05] text-[color:var(--burgundy)]">
+          <h3 className="font-[family-name:var(--font-display)] italic text-[clamp(2.4rem,6vw,4.6rem)] leading-normal text-[color:var(--burgundy)]">
             <RevealLine text="Love was never meant" stagger={0.06} />
             <br />
             <RevealLine text="to be measured." stagger={0.06} delay={0.3} />
@@ -662,7 +681,7 @@ function ActIV_Reflection() {
         </FadeUp>
 
         <FadeUp delay={0.2}>
-          <p className="mt-14 font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[2]">
+          <p className="mt-10 font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[2]">
             It carries no ruler. It recognizes no borders. It asks no permission before choosing
             where to bloom. Society has built enough walls to cage the love that grows — the love
             that blossoms. To anyone. To you.{" "}
@@ -725,7 +744,7 @@ function ActV_Revelation() {
         <ActMarker index="Act V" title="The Revelation" />
 
         <FadeUp>
-          <h3 className="font-[family-name:var(--font-display)] italic text-[clamp(2.2rem,5.5vw,4.2rem)] leading-[1.1] text-[color:var(--gold)]">
+          <h3 className="font-[family-name:var(--font-display)] italic text-[clamp(2.2rem,5.5vw,4.2rem)] leading-normal text-[color:var(--gold)]">
             <RevealLine
               text="So let this world be filled with a love that is never measured —"
               stagger={0.04}
@@ -734,7 +753,7 @@ function ActV_Revelation() {
         </FadeUp>
 
         <FadeUp delay={0.2}>
-          <p className="mt-10 font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[2] text-[color:var(--parchment)]/85">
+          <p className="mt-6 font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[2] text-[color:var(--parchment)]/85">
             not by gender, by color, by origin, or by the names society created to separate us.
           </p>
         </FadeUp>
@@ -801,15 +820,74 @@ function ActV_Revelation() {
 /* ---------- Act VI — The Final Letter ---------- */
 
 function ActVI_FinalLetter() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start center", "end end"],
+  });
+
+  // Spring config for a gentle, smooth transition.
+  const springConfig = { stiffness: 100, damping: 30, mass: 0.7 };
+
+  // As we scroll through this section, we'll fade to a dark background
+  // to prepare for the final colophon. We use a spring to make it buttery smooth.
+  const bgColor = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0.4, 0.95],
+      ["oklch(from var(--ivory) l c h)", "oklch(from var(--ink) l c h)"],
+    ),
+    springConfig,
+  );
+  const textColor = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0.4, 0.95],
+      ["oklch(from var(--ink) l c h)", "oklch(from var(--parchment) l c h)"],
+    ),
+    springConfig,
+  );
+  const softTextColor = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0.4, 0.95],
+      ["oklch(from var(--ink-soft) l c h)", "oklch(from var(--parchment) l c h / 0.8)"],
+    ),
+    springConfig,
+  );
+  const burgundyColor = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0.4, 0.95],
+      ["oklch(from var(--burgundy) l c h)", "oklch(from var(--gold) l c h)"],
+    ),
+    springConfig,
+  );
+  const bronzeColor = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0.4, 0.95],
+      ["oklch(from var(--bronze) l c h)", "oklch(from var(--gold) l c h / 0.9)"],
+    ),
+    springConfig,
+  );
+
   return (
-    <section className="relative bg-[color:var(--ivory)] px-6 py-32 md:py-48">
-      <div className="mx-auto max-w-[64ch]">
-        <ActMarker index="Act VI" title="The Final Letter" />
+    <motion.section
+      ref={ref}
+      style={{ backgroundColor: bgColor }}
+      className="relative px-6 py-32 md:py-48"
+    >
+      <motion.div style={{ color: textColor }} className="mx-auto max-w-[64ch]">
+        <ActMarker index="Act VI" title="The Final Letter" color={bronzeColor} />
 
         <FadeUp>
-          <p className="font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl text-[color:var(--burgundy)]">
+          <motion.p
+            style={{ color: burgundyColor }}
+            className="font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl"
+          >
             My dear,
-          </p>
+          </motion.p>
         </FadeUp>
 
         <FadeUp delay={0.1}>
@@ -829,12 +907,18 @@ function ActVI_FinalLetter() {
         </FadeUp>
 
         <FadeUp delay={0.2}>
-          <p className="mt-10 font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl leading-snug text-[color:var(--ink-soft)]">
+          <motion.p
+            style={{ color: softTextColor }}
+            className="mt-10 font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl leading-snug"
+          >
             It was performed by every heart that chose love over fear.
-          </p>
-          <p className="mt-4 font-[family-name:var(--font-letter)] italic text-xl md:text-2xl text-[color:var(--burgundy)]">
+          </motion.p>
+          <motion.p
+            style={{ color: burgundyColor }}
+            className="mt-4 font-[family-name:var(--font-letter)] italic text-xl md:text-2xl"
+          >
             Because there is no shame in loving. There never was.
-          </p>
+          </motion.p>
         </FadeUp>
 
         <FadeUp delay={0.25}>
@@ -846,41 +930,62 @@ function ActVI_FinalLetter() {
 
         <FadeUp delay={0.3}>
           <p className="mt-10 font-[family-name:var(--font-serif)] text-xl md:text-[1.35rem] leading-[1.95]">
-            <em className="font-[family-name:var(--font-letter)]">To my dearest bizarre enthusiast</em>,
-            pride is never meant to be caged. After all, one thing is for sure. For all the
+            <motion.em
+              style={{ color: burgundyColor }}
+              className="font-[family-name:var(--font-letter)]"
+            >
+              To my dearest bizarre enthusiast
+            </motion.em>
+            , pride is never meant to be caged. After all, one thing is for sure. For all the
             things we spent decades fighting and fearing, it is love that we shouldn’t be hiding
             from. It is love that we shouldn’t be afraid to show.
           </p>
         </FadeUp>
 
         <FadeUp delay={0.35}>
-          <div className="mt-16 space-y-4 font-[family-name:var(--font-display)] italic text-3xl md:text-5xl leading-tight text-[color:var(--ink)]">
+          <div className="mt-16 space-y-4 text-center font-[family-name:var(--font-display)] italic text-3xl md:text-5xl leading-tight">
             <p>And remember,</p>
-            <p className="text-[color:var(--burgundy)]">pride is a fight.</p>
+            <motion.p style={{ color: burgundyColor }}>pride is a fight.</motion.p>
             <p>Pride is where the heart rests.</p>
-            <p className="text-[color:var(--burgundy)]">Pride is freedom.</p>
+            <motion.p style={{ color: burgundyColor }}>Pride is freedom.</motion.p>
           </div>
         </FadeUp>
 
-        <FadeUp delay={0.5}>
-          <p className="mt-14 font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl text-[color:var(--ink-soft)]">
-            And love?
-          </p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl md:text-5xl text-[color:var(--burgundy)]">
-            That’s what keeps the pride alive.
-          </p>
-        </FadeUp>
+        <div className="mt-14 text-center">
+          <FadeUp delay={0.5}>
+            <motion.p
+              style={{ color: softTextColor }}
+              className="font-[family-name:var(--font-letter)] italic text-2xl md:text-3xl"
+            >
+              And love?
+            </motion.p>
+          </FadeUp>
+          <FadeUp delay={0.55}>
+            <motion.p
+              style={{ color: burgundyColor }}
+              className="mt-2 font-[family-name:var(--font-display)] text-3xl md:text-5xl"
+            >
+              That’s what keeps the pride alive.
+            </motion.p>
+          </FadeUp>
+        </div>
 
         <FadeUp delay={0.7}>
-          <div className="mt-24 flex flex-col items-start gap-3 text-[color:var(--bronze)]">
-            <span className="h-px w-24 bg-[color:var(--bronze)]/50" />
-            <span className="font-[family-name:var(--font-letter)] italic text-lg">
+          <motion.div
+            style={{ color: bronzeColor }}
+            className="mt-24 flex flex-col items-start gap-3"
+          >
+            <motion.span
+              style={{ backgroundColor: bronzeColor, opacity: 0.5 }}
+              className="h-px w-24"
+            />
+            <span className="font-[family-name:var(--font-handwriting)] text-4xl -ml-1">
               Yours, behind the curtain —
             </span>
-          </div>
+          </motion.div>
         </FadeUp>
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 }
 
@@ -900,8 +1005,10 @@ function Colophon() {
           Set in Bodoni Moda, EB Garamond, and Cormorant Garamond. Printed in parchment, lit by
           faded gold.
         </p>
+        <p className="max-w-md font-[family-name:var(--font-serif)] text-sm leading-relaxed text-[color:var(--parchment)]/55">
+          Made by the Consortium of Office Management and Information Technologists
+        </p>
       </div>
     </footer>
   );
 }
-
