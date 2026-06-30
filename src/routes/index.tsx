@@ -303,8 +303,8 @@ function Act({
         ? "bg-[color:var(--ivory)]"
         : "bg-[color:var(--parchment)]";
   return (
-    <section id={id} className={`relative ${bg} px-6 py-32 md:py-44`}>
-      <div className="mx-auto max-w-[68ch]">
+    <section id={id} className={`relative ${bg} px-6 py-24 sm:py-32 md:py-40`}>
+      <div className="mx-auto max-w-[68ch] space-y-7 md:space-y-8">
         <ActMarker index={index} title={title} />
         {children}
       </div>
